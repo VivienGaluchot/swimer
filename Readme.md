@@ -1,6 +1,6 @@
-# Round timer
+# What ?
 
-Simple Arduino base round timer.
+Simple Arduino base lap counter and timer.
 
 Count and display a number of round, and chronometer in the same time.
 
