@@ -1,3 +1,7 @@
+#include "src/display.hpp"
+
+swimer::Display display;
+
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
 }
