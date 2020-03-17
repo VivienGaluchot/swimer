@@ -17,4 +17,11 @@ void show(const swimer::Display& display) {
     }
 }
 
+bool getMainButtonState() {
+    std::string is_on;
+    std::cout << "PAUSE : is main button on ? (y/n)" << std::endl;
+    std::cin >> is_on;
+    return is_on == "y";
+}
+
 #endif
