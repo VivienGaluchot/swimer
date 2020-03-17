@@ -5,23 +5,33 @@
 
 namespace swimer {
 
-struct Inputs {
-    bool main_button;
-    // TODO
-}
+const uint16_t MAINTAIN_TIME_FOR_PAUSE_IN_MS = 5000;
 
-struct Outputs {
-    // TODO
-}
+enum State { PAUSE, RUN };
+
+struct Input {
+    Input();
+    bool is_main_button_pushed;
+    uint64_t time_in_ms;
+};
+
+struct Output {
+    Output();
+    uint16_t lap_count;
+    uint64_t run_time_in_ms;
+    State state;
+};
 
 class Autom {
 public:
     Autom();
-    void step(const Inputs& inputs);
-    const Outputs& get() const;
+    void crank(const Input& input);
+    const Output& get() const;
 private:
-    // TODO
-}
+    Output m_output;
+    Input m_last_input;
+    uint64_t m_main_button_push_begin;
+};
 
 }
 

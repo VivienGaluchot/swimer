@@ -2,6 +2,7 @@
 #include <string.h>
 #include <assert.h>
 
+
 swimer::Display::Display()
     : m_pixels() {
     memset(&m_pixels, 0, sizeof(m_pixels));
