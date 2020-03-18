@@ -7,8 +7,7 @@
 
 namespace swimer {
 
-void computeGraphics(Display& display, const Input& input, const Output& output)
-;
+void computeGraphics(Display& display, const Input& input, const Output& output);
 
 }
 
