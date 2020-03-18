@@ -14,8 +14,11 @@ bin/display.o : ../src/display.cpp ../src/display.hpp bindir
 bin/autom.o : ../src/autom.cpp ../src/autom.hpp bindir
 	g++ ../src/autom.cpp -c -o bin/autom.o -Wall
 
-bin/main.o : main.cpp ../src/display.hpp ../src/autom.hpp stub.hpp bindir
+bin/vues.o : ../src/vues.cpp ../src/vues.hpp ../src/display.hpp ../src/autom.hpp bindir
+	g++ ../src/vues.cpp -c -o bin/vues.o -Wall
+
+bin/main.o : main.cpp ../src/display.hpp ../src/autom.hpp ../src/vues.hpp  stub.hpp bindir
 	g++ main.cpp -c -o bin/main.o -Wall
 
-bin/main.exe : bin/main.o bin/display.o bin/autom.o
-	g++ bin/main.o bin/display.o bin/autom.o -o bin/main.exe -Wall
+bin/main.exe : bin/main.o bin/display.o bin/autom.o bin/vues.o
+	g++ bin/main.o bin/display.o bin/autom.o bin/vues.o -o bin/main.exe -Wall

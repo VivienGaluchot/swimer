@@ -1,6 +1,7 @@
 #include <iostream>
 #include "../src/autom.hpp"
 #include "../src/display.hpp"
+#include "../src/vues.hpp"
 #include "stub.hpp"
 
 
@@ -32,11 +33,12 @@ void loop() {
     autom.crank(input);
     std::cout << std::endl;
     std::cout << "lap_count : " << autom.get().lap_count << std::endl;
-    std::cout << "state     : " << ((autom.get().state == swimer::PAUSE) ? "PAUSE" : "RUN") << std::endl;
+    std::cout << "state     : " << ((autom.get().state == swimer::PAUSE) ? "PAUSE" : "RUN") << std::endl;   
     std::cout << "run_time  : " << autom.get().run_time_in_ms << std::endl;
     std::cout << std::endl;
 
     std::cout << "-screen-------------------------" << std::endl;
+    swimer::computeGraphics(display, input, autom.get());
     show(display);
     std::cout << "--------------------------------" << std::endl;
 
