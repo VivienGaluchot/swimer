@@ -2,26 +2,63 @@
 #include "src/autom.hpp"
 #include "src/vues.hpp"
 
-swimer::Display display;
+#include <Adafruit_IS31FL3731.h>
+
+const uint8_t MAIN_BUTTON = 2;
+Adafruit_IS31FL3731 matrix = Adafruit_IS31FL3731();
+
+swimer::Display disp;
 swimer::Input input;
 swimer::Autom autom;
 
 void setup() {
+  Serial.begin(9600);
+
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(MAIN_BUTTON, INPUT_PULLUP);
+  
+  if (!matrix.begin()) {
+    Serial.println("IS31 not found");
+    while(1);
+  }
+  matrix.clear();
 }
 
 void loop() {
-  // TODO get input
-  input.is_main_button_pushed = false;
+  // get input
+  input.is_main_button_pushed = !digitalRead(MAIN_BUTTON);
   input.time_in_ms = millis();
 
-  autom.crank(input);
-  swimer::computeGraphics(display, input, autom.get());
-  // TODO show display
+  /* Serial.print("main button : ");
+  Serial.print(input.is_main_button_pushed, DEC);
+  Serial.print(", time : ");
+  Serial.print(int (input.time_in_ms), DEC);
+  Serial.println(); */
 
+  // compute cycle
+  autom.crank(input);
+  swimer::computeGraphics(disp, input, autom.get());
+  
+  // show display
+  // uint8_t current_frame = disp.getFrame();
+  // matrix.setFrame(current_frame);
+  for (uint8_t y = 0; y < swimer::HEIGHT; y++) {
+      for (uint8_t x = 0; x < swimer::WIDTH; x++) {
+          swimer::Pixel& pixel = disp.getPixel(x, y);
+          if (pixel.intensity != pixel.last_intensity) {
+             matrix.drawPixel(x, y, pixel.intensity);
+             pixel.last_intensity = pixel.intensity;
+          }
+      }
+  }
+  // matrix.displayFrame(current_frame);
+  // current_frame = (current_frame + 1) % 2;
+  // disp.setFrame(current_frame);
+  
   // blink
-  if ((input.time_in_ms / 1000) % 2 == 0)
-    digitalWrite(LED_BUILTIN, HIGH);
-  else
-    digitalWrite(LED_BUILTIN, LOW);
+  if ((input.time_in_ms / 1000) % 2 == 0) {
+     digitalWrite(LED_BUILTIN, HIGH);
+  } else {
+     digitalWrite(LED_BUILTIN, LOW);
+  }
 }
