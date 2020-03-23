@@ -34,11 +34,14 @@ void swimer::Autom::crank(const swimer::Input& input) {
         m_main_button_push_begin = input.time_in_ms;
     }
 
+    m_output.pause_hold_ratio = 0;
     if (input.is_main_button_pushed && m_output.state == RUN) {
         uint64_t main_button_maintain_time = input.time_in_ms - m_main_button_push_begin;
         if (main_button_maintain_time > MAINTAIN_TIME_FOR_PAUSE_IN_MS) {
             m_output.run_time_in_ms -= main_button_maintain_time;
             m_output.state = PAUSE;
+        } else {
+            m_output.pause_hold_ratio = float(main_button_maintain_time) / MAINTAIN_TIME_FOR_PAUSE_IN_MS;
         }
     }
 

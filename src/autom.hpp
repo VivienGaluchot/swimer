@@ -5,7 +5,7 @@
 
 namespace swimer {
 
-const uint16_t MAINTAIN_TIME_FOR_PAUSE_IN_MS = 5000;
+const uint16_t MAINTAIN_TIME_FOR_PAUSE_IN_MS = 3000;
 
 enum State { PAUSE, RUN };
 
@@ -20,6 +20,7 @@ struct Output {
     uint16_t lap_count;
     uint64_t run_time_in_ms;
     State state;
+    float pause_hold_ratio;
 };
 
 class Autom {

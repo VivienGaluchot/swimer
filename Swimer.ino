@@ -40,8 +40,6 @@ void loop() {
   swimer::computeGraphics(disp, input, autom.get());
   
   // show display
-  // uint8_t current_frame = disp.getFrame();
-  // matrix.setFrame(current_frame);
   for (uint8_t y = 0; y < swimer::HEIGHT; y++) {
       for (uint8_t x = 0; x < swimer::WIDTH; x++) {
           swimer::Pixel& pixel = disp.getPixel(x, y);
@@ -51,9 +49,6 @@ void loop() {
           }
       }
   }
-  // matrix.displayFrame(current_frame);
-  // current_frame = (current_frame + 1) % 2;
-  // disp.setFrame(current_frame);
   
   // blink
   if ((input.time_in_ms / 1000) % 2 == 0) {
