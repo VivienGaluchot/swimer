@@ -211,9 +211,6 @@ void swimer::computeGraphics(Display& display, const Input& input, const Output&
             ::Vect2D clock(0, 3);
             clock.rot(sec_slider * M_PI * -2);
             clock.add(center);
-
-            Line l(center, clock);
-            l.render(ctx);
             
             GraphicContext lctx(ctx);
             lctx.setIntensity(2);
@@ -223,6 +220,9 @@ void swimer::computeGraphics(Display& display, const Input& input, const Output&
                 dot.add(center);
                 lctx.setPixel(dot);
             }
+
+            Line l(center, clock);
+            l.render(ctx);
         }
 
         if (output.pause_hold_ratio != 0) {
