@@ -60,6 +60,10 @@ public:
         m_cursor = p;
     }
 
+    const Vect2D& getCursor() const {
+        return m_cursor;
+    }
+
     void translateCursor(const Vect2D& t) {
         m_cursor.add(t);
     }
@@ -87,9 +91,9 @@ public:
     virtual void render(GraphicContext& ctx) {}
 };
 
-class Line : public Widget {
+class Segment : public Widget {
 public:
-    Line(Vect2D a, Vect2D b)
+    Segment(Vect2D a, Vect2D b)
         : m_a(a)
         , m_b(b) {}
     
@@ -161,16 +165,27 @@ public:
     
     void render(GraphicContext& ctx) override {
         if (m_character == 'P') {
-            ctx.setPixel(Vect2D(0, 4));
-            ctx.setPixel(Vect2D(0, 3));
-            ctx.setPixel(Vect2D(0, 2));
-            ctx.setPixel(Vect2D(0, 1));
-            ctx.setPixel(Vect2D(0, 0));
-            ctx.setPixel(Vect2D(1, 4));
-            ctx.setPixel(Vect2D(1, 2));
-            ctx.setPixel(Vect2D(2, 4));
-            ctx.setPixel(Vect2D(2, 3));
-            ctx.setPixel(Vect2D(2, 2));
+            Segment(Vect2D(0, 4), Vect2D(0, 0)).render(ctx);
+            Segment(Vect2D(0, 4), Vect2D(2, 4)).render(ctx);
+            Segment(Vect2D(0, 2), Vect2D(2, 2)).render(ctx);
+            Segment(Vect2D(2, 2), Vect2D(2, 4)).render(ctx);
+            ctx.translateCursor(Vect2D(4, 0));
+        } else if (m_character == '0') {
+            Segment(Vect2D(0, 4), Vect2D(0, 0)).render(ctx);
+            Segment(Vect2D(0, 4), Vect2D(2, 4)).render(ctx);
+            Segment(Vect2D(2, 4), Vect2D(2, 0)).render(ctx);
+            Segment(Vect2D(2, 0), Vect2D(0, 0)).render(ctx);
+            ctx.translateCursor(Vect2D(4, 0));
+        } else if (m_character == '1') {
+            Segment(Vect2D(1, 4), Vect2D(1, 0)).render(ctx);
+            Segment(Vect2D(1, 4), Vect2D(0, 3)).render(ctx);
+            ctx.translateCursor(Vect2D(3, 0));
+        } else if (m_character == '2') {
+            Segment(Vect2D(0, 4), Vect2D(2, 4)).render(ctx);
+            Segment(Vect2D(2, 4), Vect2D(2, 2)).render(ctx);
+            Segment(Vect2D(2, 2), Vect2D(0, 2)).render(ctx);
+            Segment(Vect2D(0, 2), Vect2D(0, 0)).render(ctx);
+            Segment(Vect2D(0, 0), Vect2D(2, 0)).render(ctx);
             ctx.translateCursor(Vect2D(4, 0));
         }
     }
@@ -183,14 +198,10 @@ private:
 // public
 
 void swimer::computeGraphics(Display& display, const Input& input, const Output& output) {
+    // clean
     for (uint8_t x = 0; x < WIDTH; x++) {
         for (uint8_t y = 0; y < HEIGHT; y++) {
-            // clean
-            if (input.is_main_button_pushed) {
-                display.setPixel(x, y, 1);
-            } else {
-                display.setPixel(x, y, 0);
-            }
+            display.setPixel(x, y, 0);
         }
     }
     
@@ -199,8 +210,10 @@ void swimer::computeGraphics(Display& display, const Input& input, const Output&
 
     if (output.state == PAUSE) {
         ctx.setCursor(::Vect2D(0, 4));
-        CharWidget letter('P');
-        letter.render(ctx);
+        CharWidget('P').render(ctx);
+        CharWidget('0').render(ctx);
+        CharWidget('1').render(ctx);
+        CharWidget('2').render(ctx);
     } else {
         ctx.setCursor(::Vect2D(0, 0));
         ctx.setIntensity(16);
@@ -221,7 +234,7 @@ void swimer::computeGraphics(Display& display, const Input& input, const Output&
                 lctx.setPixel(dot);
             }
 
-            Line l(center, clock);
+            Segment l(center, clock);
             l.render(ctx);
         }
 
