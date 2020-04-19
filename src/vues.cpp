@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <math.h>
 
+
 namespace {
 
 int16_t abs(int16_t a) {
@@ -11,6 +12,7 @@ int16_t abs(int16_t a) {
     else
         return -1 * a;
 }
+
 
 class Vect2D {
 public:
@@ -44,6 +46,7 @@ public:
     int16_t y;
 };
 
+
 class GraphicContext {
 public:
     GraphicContext(swimer::Display& display)
@@ -60,7 +63,7 @@ public:
         m_cursor = p;
     }
 
-    const Vect2D& getCursor() const {
+    virtual Vect2D getCursor() const {
         return m_cursor;
     }
 
@@ -72,10 +75,10 @@ public:
         m_intensity = intensity;
     }
 
-    void setPixel(Vect2D p) {
+    void setPixel(Vect2D p, float relative_instensity=1.) {
         p.add(m_cursor);
         if (0 <= p.x && p.x < swimer::WIDTH && 0 <= p.y && p.y < swimer::HEIGHT) {
-            m_display.setPixel(p.x, swimer::HEIGHT - p.y - 1, m_intensity);
+            m_display.setPixel(p.x, swimer::HEIGHT - p.y - 1, m_intensity * relative_instensity);
         }
     }
 
@@ -85,11 +88,32 @@ private:
     swimer::Display& m_display;
 };
 
+
+class RollContext : public GraphicContext {
+public:
+    RollContext(const GraphicContext& ctx, uint16_t roll_width, uint64_t roll_time_in_ms, uint16_t content_width)
+        : GraphicContext(ctx)
+        , m_roll_width(roll_width) {
+            // TODO compute m_offset
+        }
+
+    Vect2D getCursor() const override {
+        auto cursor = GraphicContext::getCursor();
+        return Vect2D(cursor.x + m_offset, cursor.y);
+    }
+
+private:
+    uint16_t m_roll_width;
+    int16_t m_offset;
+};
+
+
 class Widget {
 public:
     Widget() {}
     virtual void render(GraphicContext& ctx) {}
 };
+
 
 class Segment : public Widget {
 public:
@@ -158,10 +182,24 @@ private:
     Vect2D m_b;
 };
 
+
 class CharWidget : public Widget {
 public:
     CharWidget(const char character)
-    : m_character(character) {}
+        : m_character(character) {}
+
+    uint16_t getLenght() const {
+        if (m_character == 'P') {
+            return 4;
+        } else if (m_character == '0') {
+            return 4;
+        } else if (m_character == '1') {
+            return 3;
+        } else if (m_character == '2') {
+            return 4;
+        }
+        return 0;
+    }
     
     void render(GraphicContext& ctx) override {
         if (m_character == 'P') {
@@ -169,31 +207,58 @@ public:
             Segment(Vect2D(0, 4), Vect2D(2, 4)).render(ctx);
             Segment(Vect2D(0, 2), Vect2D(2, 2)).render(ctx);
             Segment(Vect2D(2, 2), Vect2D(2, 4)).render(ctx);
-            ctx.translateCursor(Vect2D(4, 0));
         } else if (m_character == '0') {
             Segment(Vect2D(0, 4), Vect2D(0, 0)).render(ctx);
             Segment(Vect2D(0, 4), Vect2D(2, 4)).render(ctx);
             Segment(Vect2D(2, 4), Vect2D(2, 0)).render(ctx);
             Segment(Vect2D(2, 0), Vect2D(0, 0)).render(ctx);
-            ctx.translateCursor(Vect2D(4, 0));
         } else if (m_character == '1') {
             Segment(Vect2D(1, 4), Vect2D(1, 0)).render(ctx);
             Segment(Vect2D(1, 4), Vect2D(0, 3)).render(ctx);
-            ctx.translateCursor(Vect2D(3, 0));
         } else if (m_character == '2') {
             Segment(Vect2D(0, 4), Vect2D(2, 4)).render(ctx);
             Segment(Vect2D(2, 4), Vect2D(2, 2)).render(ctx);
             Segment(Vect2D(2, 2), Vect2D(0, 2)).render(ctx);
             Segment(Vect2D(0, 2), Vect2D(0, 0)).render(ctx);
             Segment(Vect2D(0, 0), Vect2D(2, 0)).render(ctx);
-            ctx.translateCursor(Vect2D(4, 0));
         }
+        ctx.translateCursor(Vect2D(getLenght(), 0));
     }
+
 private:
     char m_character;
 };
 
+
+class StringWidget : public Widget {
+public:
+    StringWidget(const char* string)
+        : m_string(string) {}
+
+    uint16_t getLenght() const {
+        uint16_t length = 0;
+        const char* i = m_string;
+        while (*i != 0) {
+            length += CharWidget(*i).getLenght();
+            i++;
+        }
+        return length;
+    }
+
+    void render(GraphicContext& ctx) override {
+        const char* i = m_string;
+        while (*i != 0) {
+            CharWidget(*i).render(ctx);
+            i++;
+        }
+    }
+
+private:
+    const char* m_string;
+};
+
 }
+
 
 // public
 
@@ -209,35 +274,41 @@ void swimer::computeGraphics(Display& display, const Input& input, const Output&
     ctx.setIntensity(16);
 
     if (output.state == PAUSE) {
-        ctx.setCursor(::Vect2D(0, 4));
-        CharWidget('P').render(ctx);
-        CharWidget('0').render(ctx);
-        CharWidget('1').render(ctx);
-        CharWidget('2').render(ctx);
+        ctx.setCursor(::Vect2D(1, 2));
+        StringWidget("P0120").render(ctx);
     } else {
         ctx.setCursor(::Vect2D(0, 0));
         ctx.setIntensity(16);
 
-        float sec_slider = (input.time_in_ms % 1000) / 1000.0;
-        {            
-            ::Vect2D center(4, HEIGHT / 2);
-            ::Vect2D clock(0, 3);
-            clock.rot(sec_slider * M_PI * -2);
-            clock.add(center);
+        // second clock
+        // float sec_slider = (input.time_in_ms % 1000) / 1000.0;
+        // {            
+        //     ::Vect2D center(4, HEIGHT / 2);
+        //     ::Vect2D clock(0, 3);
+        //     clock.rot(sec_slider * M_PI * -2);
+        //     clock.add(center);
             
-            GraphicContext lctx(ctx);
-            lctx.setIntensity(2);
-            for (uint8_t a = 0; a < 8; a++) {
-                ::Vect2D dot(0, 3);
-                dot.rot(a * M_PI / 4);
-                dot.add(center);
-                lctx.setPixel(dot);
-            }
+        //     GraphicContext lctx(ctx);
+        //     lctx.setIntensity(2);
+        //     for (uint8_t a = 0; a < 8; a++) {
+        //         ::Vect2D dot(0, 3);
+        //         dot.rot(a * M_PI / 4);
+        //         dot.add(center);
+        //         lctx.setPixel(dot);
+        //     }
 
-            Segment l(center, clock);
-            l.render(ctx);
+        //     Segment l(center, clock);
+        //     l.render(ctx);
+        // }
+        if ((input.time_in_ms / 1000) % 2) {
+            Segment(::Vect2D(1, 4), ::Vect2D(2, 5)).render(ctx);
+            Segment(::Vect2D(2, 5), ::Vect2D(3, 4)).render(ctx);
+            Segment(::Vect2D(3, 4), ::Vect2D(2, 3)).render(ctx);
+            Segment(::Vect2D(2, 3), ::Vect2D(1, 4)).render(ctx);
         }
 
+
+        // pause hold bar
         if (output.pause_hold_ratio != 0) {
             float slider = WIDTH * output.pause_hold_ratio;
             for (uint8_t i = 0; i < slider; i++)
