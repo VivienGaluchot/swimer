@@ -20,6 +20,7 @@ struct Output {
     uint16_t lap_count;
     uint64_t run_time_in_ms;
     State state;
+    uint64_t state_time_in_ms;
     float pause_hold_ratio;
 };
 
@@ -32,6 +33,7 @@ private:
     Output m_output;
     Input m_last_input;
     uint64_t m_main_button_push_begin;
+    uint64_t m_state_begin;
 };
 
 }

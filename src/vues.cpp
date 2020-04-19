@@ -2,6 +2,7 @@
 #include <string.h>
 #include <assert.h>
 #include <math.h>
+#include <stdio.h>
 
 
 namespace {
@@ -63,7 +64,7 @@ public:
         m_cursor = p;
     }
 
-    virtual Vect2D getCursor() const {
+    Vect2D getCursor() const {
         return m_cursor;
     }
 
@@ -76,7 +77,7 @@ public:
     }
 
     void setPixel(Vect2D p, float relative_instensity=1.) {
-        p.add(m_cursor);
+        p.add(getCursor());
         if (0 <= p.x && p.x < swimer::WIDTH && 0 <= p.y && p.y < swimer::HEIGHT) {
             m_display.setPixel(p.x, swimer::HEIGHT - p.y - 1, m_intensity * relative_instensity);
         }
@@ -91,20 +92,44 @@ private:
 
 class RollContext : public GraphicContext {
 public:
-    RollContext(const GraphicContext& ctx, uint16_t roll_width, uint64_t roll_time_in_ms, uint16_t content_width)
-        : GraphicContext(ctx)
-        , m_roll_width(roll_width) {
-            // TODO compute m_offset
+    /**
+     * spaces
+     * |      |        roll width
+     * |      :    |   context width
+     *        |    |   max offset
+     * 
+     * times of annimation vs offet
+     *  |             .---
+     *  |          ../
+     *  |       ../
+     *  |  ----/
+     *    Fix   Roll    Fix
+     */
+    RollContext(const GraphicContext& ctx,
+                uint64_t fix_time_in_ms,
+                uint64_t roll_time_in_ms,
+                uint64_t time_in_ms,
+                uint16_t roll_width,
+                uint16_t context_width)
+        : GraphicContext(ctx) {
+            uint16_t max_offset = 0;
+            if (context_width > roll_width) {
+                max_offset = context_width - roll_width;
+            }
+
+            int16_t time_slice_in_ms = time_in_ms % (2 * fix_time_in_ms + roll_time_in_ms);
+            if (time_slice_in_ms <= fix_time_in_ms) {
+                // fix start
+            } else if (time_slice_in_ms >= fix_time_in_ms + roll_time_in_ms) {
+                // fix end
+                translateCursor(Vect2D(-1 * max_offset, 0));
+            } else {
+                // ramp up
+                float anim_ratio = (time_slice_in_ms - fix_time_in_ms) / float (roll_time_in_ms);
+                int16_t offset = round((max_offset) * anim_ratio);
+                translateCursor(Vect2D(-1 * offset, 0));
+            }
         }
-
-    Vect2D getCursor() const override {
-        auto cursor = GraphicContext::getCursor();
-        return Vect2D(cursor.x + m_offset, cursor.y);
-    }
-
-private:
-    uint16_t m_roll_width;
-    int16_t m_offset;
 };
 
 
@@ -189,16 +214,27 @@ public:
         : m_character(character) {}
 
     uint16_t getLenght() const {
-        if (m_character == 'P') {
-            return 4;
-        } else if (m_character == '0') {
-            return 4;
-        } else if (m_character == '1') {
-            return 3;
-        } else if (m_character == '2') {
-            return 4;
+        switch (m_character) {
+            case 'P':
+            case '0':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                return 3;
+            case '1':
+                return 2;
+            case ' ':
+            case ':':
+            case '.':
+                return 1;
+            default:
+                return 0;
         }
-        return 0;
     }
     
     void render(GraphicContext& ctx) override {
@@ -207,11 +243,17 @@ public:
             Segment(Vect2D(0, 4), Vect2D(2, 4)).render(ctx);
             Segment(Vect2D(0, 2), Vect2D(2, 2)).render(ctx);
             Segment(Vect2D(2, 2), Vect2D(2, 4)).render(ctx);
+        } else if (m_character == ':') {
+            ctx.setPixel(Vect2D(0, 1));
+            ctx.setPixel(Vect2D(0, 3));
+        } else if (m_character == '.') {
+            ctx.setPixel(Vect2D(0, 0));
         } else if (m_character == '0') {
-            Segment(Vect2D(0, 4), Vect2D(0, 0)).render(ctx);
             Segment(Vect2D(0, 4), Vect2D(2, 4)).render(ctx);
             Segment(Vect2D(2, 4), Vect2D(2, 0)).render(ctx);
-            Segment(Vect2D(2, 0), Vect2D(0, 0)).render(ctx);
+            Segment(Vect2D(0, 4), Vect2D(0, 0)).render(ctx);
+            Segment(Vect2D(0, 4), Vect2D(0, 2)).render(ctx);
+            Segment(Vect2D(0, 0), Vect2D(2, 0)).render(ctx);
         } else if (m_character == '1') {
             Segment(Vect2D(1, 4), Vect2D(1, 0)).render(ctx);
             Segment(Vect2D(1, 4), Vect2D(0, 3)).render(ctx);
@@ -220,6 +262,45 @@ public:
             Segment(Vect2D(2, 4), Vect2D(2, 2)).render(ctx);
             Segment(Vect2D(2, 2), Vect2D(0, 2)).render(ctx);
             Segment(Vect2D(0, 2), Vect2D(0, 0)).render(ctx);
+            Segment(Vect2D(0, 0), Vect2D(2, 0)).render(ctx);
+        } else if (m_character == '3') {
+            Segment(Vect2D(0, 4), Vect2D(2, 4)).render(ctx);
+            Segment(Vect2D(2, 4), Vect2D(2, 0)).render(ctx);
+            Segment(Vect2D(2, 0), Vect2D(0, 0)).render(ctx);
+            Segment(Vect2D(1, 2), Vect2D(2, 2)).render(ctx);
+        } else if (m_character == '4') {
+            Segment(Vect2D(0, 4), Vect2D(0, 2)).render(ctx);
+            Segment(Vect2D(0, 2), Vect2D(2, 2)).render(ctx);
+            Segment(Vect2D(2, 4), Vect2D(2, 0)).render(ctx);
+        } else if (m_character == '5') {
+            Segment(Vect2D(0, 4), Vect2D(2, 4)).render(ctx);
+            Segment(Vect2D(0, 4), Vect2D(0, 2)).render(ctx);
+            Segment(Vect2D(2, 2), Vect2D(0, 2)).render(ctx);
+            Segment(Vect2D(2, 2), Vect2D(2, 0)).render(ctx);
+            Segment(Vect2D(0, 0), Vect2D(2, 0)).render(ctx);
+        } else if (m_character == '6') {
+            Segment(Vect2D(0, 4), Vect2D(2, 4)).render(ctx);
+            Segment(Vect2D(0, 4), Vect2D(0, 0)).render(ctx);
+            Segment(Vect2D(0, 4), Vect2D(0, 2)).render(ctx);
+            Segment(Vect2D(2, 2), Vect2D(0, 2)).render(ctx);
+            Segment(Vect2D(2, 2), Vect2D(2, 0)).render(ctx);
+            Segment(Vect2D(0, 0), Vect2D(2, 0)).render(ctx);
+        } else if (m_character == '7') {
+            Segment(Vect2D(0, 4), Vect2D(2, 4)).render(ctx);
+            Segment(Vect2D(2, 4), Vect2D(2, 0)).render(ctx);
+        } else if (m_character == '8') {
+            Segment(Vect2D(0, 4), Vect2D(2, 4)).render(ctx);
+            Segment(Vect2D(2, 4), Vect2D(2, 0)).render(ctx);
+            Segment(Vect2D(0, 4), Vect2D(0, 0)).render(ctx);
+            Segment(Vect2D(0, 4), Vect2D(0, 2)).render(ctx);
+            Segment(Vect2D(2, 2), Vect2D(0, 2)).render(ctx);
+            Segment(Vect2D(0, 0), Vect2D(2, 0)).render(ctx);
+        } else if (m_character == '9') {
+            Segment(Vect2D(0, 4), Vect2D(2, 4)).render(ctx);
+            Segment(Vect2D(2, 4), Vect2D(2, 0)).render(ctx);
+            Segment(Vect2D(0, 4), Vect2D(0, 2)).render(ctx);
+            Segment(Vect2D(0, 4), Vect2D(0, 2)).render(ctx);
+            Segment(Vect2D(2, 2), Vect2D(0, 2)).render(ctx);
             Segment(Vect2D(0, 0), Vect2D(2, 0)).render(ctx);
         }
         ctx.translateCursor(Vect2D(getLenght(), 0));
@@ -238,18 +319,26 @@ public:
     uint16_t getLenght() const {
         uint16_t length = 0;
         const char* i = m_string;
+        bool first = true;
         while (*i != 0) {
+            if (!first)
+                length += 1;
             length += CharWidget(*i).getLenght();
             i++;
+            first = false;
         }
         return length;
     }
 
     void render(GraphicContext& ctx) override {
         const char* i = m_string;
+        bool first = true;
         while (*i != 0) {
+            if (!first)
+                ctx.translateCursor(Vect2D(1, 0));
             CharWidget(*i).render(ctx);
             i++;
+            first = false;
         }
     }
 
@@ -271,50 +360,75 @@ void swimer::computeGraphics(Display& display, const Input& input, const Output&
     }
     
     GraphicContext ctx(display);
-    ctx.setIntensity(16);
+    ctx.setCursor(::Vect2D(0, 0));
+    ctx.setIntensity(32);
 
     if (output.state == PAUSE) {
-        ctx.setCursor(::Vect2D(1, 2));
-        StringWidget("P0120").render(ctx);
+        const uint64_t PAUSE_SYMBOL_TIME_IN_MS = 2000;
+        const uint64_t FIX_TIME_IN_MS = 2000;
+        const uint64_t ROLL_TIME_IN_MS = 3000;
+
+        const uint64_t TOTAL_PERIOD_TIME_IN_MS = PAUSE_SYMBOL_TIME_IN_MS + 2 * FIX_TIME_IN_MS + ROLL_TIME_IN_MS;
+
+        uint64_t period_time_in_ms = output.state_time_in_ms % TOTAL_PERIOD_TIME_IN_MS;
+        if (period_time_in_ms < PAUSE_SYMBOL_TIME_IN_MS) {
+            if (period_time_in_ms % 2000 >= 500 && period_time_in_ms % 2000 < 1500) {
+                ctx.setCursor(::Vect2D(WIDTH / 2 - 2, 1));
+                ::Segment(::Vect2D(0, 0), :: Vect2D(0, 6)).render(ctx);
+                ::Segment(::Vect2D(1, 0), :: Vect2D(1, 6)).render(ctx);
+                ::Segment(::Vect2D(3, 0), :: Vect2D(3, 6)).render(ctx);
+                ::Segment(::Vect2D(4, 0), :: Vect2D(4, 6)).render(ctx);
+            }
+        } else {
+            ctx.setCursor(::Vect2D(0, 2));
+            char lap_count_str[16];
+            uint16_t run_time_in_s = output.run_time_in_ms / 1000;
+            uint16_t run_time_ms = output.run_time_in_ms % 1000;
+            uint16_t run_time_s = run_time_in_s % 60;
+            uint16_t run_time_m = (run_time_in_s / 60) % 60;
+            uint16_t run_time_h = (run_time_in_s / (60 * 60));
+            if (run_time_h > 0) {
+                snprintf(lap_count_str, sizeof(lap_count_str), "%u:%u:%u", run_time_h, run_time_m, run_time_s);
+            } else if (run_time_m > 0) {
+                snprintf(lap_count_str, sizeof(lap_count_str), "%u:%u.%03u", run_time_m, run_time_s, run_time_ms);
+            } else {
+                snprintf(lap_count_str, sizeof(lap_count_str), "%u.%03u", run_time_s, run_time_ms);
+            }
+
+            auto text = StringWidget(lap_count_str);
+            auto r_ctx = RollContext(ctx,
+                                     FIX_TIME_IN_MS,
+                                     ROLL_TIME_IN_MS,
+                                     period_time_in_ms - PAUSE_SYMBOL_TIME_IN_MS,
+                                     WIDTH, text.getLenght());
+            text.render(r_ctx);
+        }
     } else {
-        ctx.setCursor(::Vect2D(0, 0));
-        ctx.setIntensity(16);
-
-        // second clock
-        // float sec_slider = (input.time_in_ms % 1000) / 1000.0;
-        // {            
-        //     ::Vect2D center(4, HEIGHT / 2);
-        //     ::Vect2D clock(0, 3);
-        //     clock.rot(sec_slider * M_PI * -2);
-        //     clock.add(center);
-            
-        //     GraphicContext lctx(ctx);
-        //     lctx.setIntensity(2);
-        //     for (uint8_t a = 0; a < 8; a++) {
-        //         ::Vect2D dot(0, 3);
-        //         dot.rot(a * M_PI / 4);
-        //         dot.add(center);
-        //         lctx.setPixel(dot);
-        //     }
-
-        //     Segment l(center, clock);
-        //     l.render(ctx);
-        // }
-        if ((input.time_in_ms / 1000) % 2) {
-            Segment(::Vect2D(1, 4), ::Vect2D(2, 5)).render(ctx);
-            Segment(::Vect2D(2, 5), ::Vect2D(3, 4)).render(ctx);
-            Segment(::Vect2D(3, 4), ::Vect2D(2, 3)).render(ctx);
-            Segment(::Vect2D(2, 3), ::Vect2D(1, 4)).render(ctx);
+        // record dot
+        if ((output.run_time_in_ms / 1000) % 2) {
+            ctx.setCursor(::Vect2D(0, 3));
+            Segment(::Vect2D(0, 1), ::Vect2D(1, 2)).render(ctx);
+            Segment(::Vect2D(1, 2), ::Vect2D(2, 1)).render(ctx);
+            Segment(::Vect2D(2, 1), ::Vect2D(1, 0)).render(ctx);
+            Segment(::Vect2D(1, 0), ::Vect2D(0, 1)).render(ctx);
         }
 
-
-        // pause hold bar
+        // pause holding bar
         if (output.pause_hold_ratio != 0) {
+            auto i_ctx = GraphicContext(ctx);
+            i_ctx.setCursor(::Vect2D(0, 0));
             float slider = WIDTH * output.pause_hold_ratio;
             for (uint8_t i = 0; i < slider; i++)
-                ctx.setPixel(::Vect2D(i, 8));
-            ctx.setIntensity(16 * (slider - uint8_t(slider)));
-            ctx.setPixel(::Vect2D(slider, 8));
+                i_ctx.setPixel(::Vect2D(i, 8));
+            i_ctx.setIntensity(16 * (slider - uint8_t(slider)));
+            i_ctx.setPixel(::Vect2D(slider, 8));
         }
+        
+        // counter
+        char lap_count_str[8];
+        snprintf(lap_count_str, sizeof(lap_count_str), "%u", output.lap_count);
+        auto text = StringWidget(lap_count_str);
+        ctx.setCursor(::Vect2D(WIDTH - text.getLenght(), 2));
+        text.render(ctx);
     }
 }
