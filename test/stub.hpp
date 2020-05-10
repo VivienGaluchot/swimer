@@ -22,7 +22,16 @@ void show(const swimer::Display& display) {
     for (uint8_t y = 0; y < swimer::HEIGHT; y++) {
         for (uint8_t x = 0; x < swimer::WIDTH; x++) {
             swimer::Pixel pixel = display.getPixel(x, y);
-            std::cout << int(pixel.intensity) << " ";
+            if (pixel.intensity == 0) {
+                std::cout << " ";
+            } else if (pixel.intensity < 16) {
+                std::cout << "-";
+            } else if (pixel.intensity < 62) {
+                std::cout << "+";
+            } else {
+                std::cout << "#";
+            }
+            std::cout << " ";
         }
         std::cout << "\n";
     }

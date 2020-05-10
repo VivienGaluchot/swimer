@@ -117,7 +117,7 @@ public:
                 max_offset = context_width - roll_width;
             }
 
-            int16_t time_slice_in_ms = time_in_ms % (2 * fix_time_in_ms + roll_time_in_ms);
+            uint16_t time_slice_in_ms = time_in_ms % (2 * fix_time_in_ms + roll_time_in_ms);
             if (time_slice_in_ms <= fix_time_in_ms) {
                 // fix start
             } else if (time_slice_in_ms >= fix_time_in_ms + roll_time_in_ms) {
