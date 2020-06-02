@@ -1,10 +1,11 @@
-#include "src/display.hpp"
+  #include "src/display.hpp"
 #include "src/autom.hpp"
 #include "src/vues.hpp"
 
 #include <Adafruit_IS31FL3731.h>
 
-const uint8_t MAIN_BUTTON = 2;
+const uint8_t CTR_BUTTON = 2;
+const uint8_t PAUSE_BUTTON = 3;
 Adafruit_IS31FL3731 matrix = Adafruit_IS31FL3731();
 
 swimer::Display disp;
@@ -15,7 +16,8 @@ void setup() {
   Serial.begin(9600);
 
   pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(MAIN_BUTTON, INPUT_PULLUP);
+  pinMode(CTR_BUTTON, INPUT_PULLUP);
+  pinMode(PAUSE_BUTTON, INPUT_PULLUP);
   
   if (!matrix.begin()) {
     Serial.println("IS31 not found");
@@ -26,14 +28,9 @@ void setup() {
 
 void loop() {
   // get input
-  input.is_main_button_pushed = !digitalRead(MAIN_BUTTON);
+  input.is_ctr_button_pushed = !digitalRead(CTR_BUTTON);
+  input.is_pause_button_pushed = !digitalRead(PAUSE_BUTTON);
   input.time_in_ms = millis();
-
-  /* Serial.print("main button : ");
-  Serial.print(input.is_main_button_pushed, DEC);
-  Serial.print(", time : ");
-  Serial.print(int (input.time_in_ms), DEC);
-  Serial.println(); */
 
   // compute cycle
   autom.crank(input);

@@ -37,9 +37,16 @@ void show(const swimer::Display& display) {
     }
 }
 
-bool isMainButtonPushed() {
+bool isCtrButtonPushed() {
     std::string is_on;
     std::cout << "PAUSE : is main button pushed ? (y/n)" << std::endl;
+    std::cin >> is_on;
+    return is_on == "y";
+}
+
+bool isPauseButtonPushed() {
+    std::string is_on;
+    std::cout << "PAUSE : is main pause pushed ? (y/n)" << std::endl;
     std::cin >> is_on;
     return is_on == "y";
 }

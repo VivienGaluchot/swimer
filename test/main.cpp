@@ -14,7 +14,8 @@ void setup() {
 }
 
 void getInput(swimer::Input& input) {
-    input.is_main_button_pushed = isMainButtonPushed();
+    input.is_ctr_button_pushed = isCtrButtonPushed();
+    input.is_pause_button_pushed = isPauseButtonPushed();
     input.time_in_ms = msTime();
 }
 
@@ -25,7 +26,8 @@ void loop() {
     std::cout << "-input--------------------------" << std::endl;
     getInput(input);
     std::cout << std::endl;
-    std::cout << "main_button : " << input.is_main_button_pushed << std::endl;
+    std::cout << "ctr_button : " << input.is_ctr_button_pushed << std::endl;
+    std::cout << "pause_button : " << input.is_pause_button_pushed << std::endl;
     std::cout << "time_in_ms  : " << input.time_in_ms << std::endl;
     std::cout << std::endl;
 
