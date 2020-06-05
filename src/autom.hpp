@@ -6,6 +6,7 @@
 namespace swimer {
 
 const uint16_t MAINTAIN_TIME_FOR_PAUSE_IN_MS = 3000;
+const uint8_t IMPULSE_TRIGGER_COUNT = 5;
 
 enum State { PAUSE, RUN };
 
@@ -24,6 +25,17 @@ struct Output {
     uint64_t state_time_in_ms;
 };
 
+class ImpulseFilter {
+public:
+    ImpulseFilter();
+    void crank(bool input);
+    bool get() const;
+private:
+    uint8_t m_counter;
+    bool m_state;
+    bool m_impulse;
+};
+
 class Autom {
 public:
     Autom();
@@ -33,6 +45,8 @@ private:
     Output m_output;
     Input m_last_input;
     uint64_t m_state_begin;
+    ImpulseFilter m_ctr_button_filter;
+    ImpulseFilter m_pause_button_filter;
 };
 
 }
