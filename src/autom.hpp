@@ -7,6 +7,7 @@ namespace swimer {
 
 const uint16_t MAINTAIN_TIME_FOR_PAUSE_IN_MS = 3000;
 const uint8_t IMPULSE_TRIGGER_COUNT = 5;
+const uint16_t MIN_CTR_IMPULSE_PERIOD_IN_MS = 500;
 
 enum State { PAUSE, RUN };
 
@@ -47,6 +48,7 @@ private:
     uint64_t m_state_begin;
     ImpulseFilter m_ctr_button_filter;
     ImpulseFilter m_pause_button_filter;
+    uint64_t m_last_ctr_button_impulse_time_in_ms;
 };
 
 }

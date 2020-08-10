@@ -60,13 +60,21 @@ swimer::Autom::Autom()
     , m_last_input()
     , m_state_begin(0)
     , m_ctr_button_filter()
-    , m_pause_button_filter() {}
+    , m_pause_button_filter()
+    , m_last_ctr_button_impulse_time_in_ms(0) {}
 
 void swimer::Autom::crank(const swimer::Input& input) {
     m_ctr_button_filter.crank(input.is_ctr_button_pushed);
     m_pause_button_filter.crank(input.is_pause_button_pushed);
 
     bool is_ctr_button_impulse = m_ctr_button_filter.get();
+    if (is_ctr_button_impulse) {
+        if (input.time_in_ms - m_last_ctr_button_impulse_time_in_ms < swimer::MIN_CTR_IMPULSE_PERIOD_IN_MS)
+            is_ctr_button_impulse = false;
+        else
+            m_last_ctr_button_impulse_time_in_ms = input.time_in_ms;
+    }
+
     bool is_pause_button_impulse = m_pause_button_filter.get();
     State next_state = m_output.state;
     
